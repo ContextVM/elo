@@ -9,7 +9,11 @@
 - Add Duration unit conversion functions: `inYears`, `inQuarters`, `inMonths`, `inWeeks`, `inDays`, `inHours`, `inMinutes`, `inSeconds`
 - Add Interval type with `Interval()` constructor and `start`/`end` accessors
 - Add camelCase period boundary aliases: `startOfDay`, `endOfDay`, `startOfWeek`, etc.
-- Security fix: Use double quotes in `bot` and `eot` datetime literals
+- Security fix: prevent code injection in date/datetime/duration literal emitters
+  - JS compiler now emits those values via `JSON.stringify` rather than raw `'${value}'` interpolation
+- Security fix: restrict member access (`.`) to data types only (`any`, `object`, `array`)
+  - prevents exposing runtime internals on typed values (e.g. Luxon `DateTime`/`Duration` instances)
+- Add Interval operations: `union`, `intersection`, and `Duration(Interval)` conversion
 
 ## 0.10.0
 

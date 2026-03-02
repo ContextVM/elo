@@ -1,13 +1,23 @@
-# What is Elo ?
+# @contextvm/elo - JavaScript-Only Fork
 
-[![CI](https://github.com/enspirit/elo/actions/workflows/ci.yml/badge.svg)](https://github.com/enspirit/elo/actions/workflows/ci.yml)
+[![CI](https://github.com/contextvm/elo/actions/workflows/ci.yml/badge.svg)](https://github.com/contextvm/elo/actions/workflows/ci.yml)
 
-A simple, well-designed, portable and safe data expression language that
-compiles to Ruby, Javascript and PostgreSQL.
+> **Fork Notice**: This is a JavaScript-only fork of [enspirit/elo](https://github.com/enspirit/elo), maintained by [ContextVM](https://contextvm.com). The original multi-target (Ruby, JavaScript, PostgreSQL) version is available at the upstream repository.
 
-**[Try Elo online](https://elo-lang.org/)** - Interactive playground and documentation
+A simple, well-designed, portable and safe data expression language that compiles to JavaScript. This fork focuses on a JS-only architecture with support for plugin programs using the `plan`/`do` syntax.
 
-## Why ?
+**[Try Elo online](https://elo-lang.org/)** - Interactive playground and documentation (upstream)
+
+## Why Fork?
+
+This fork exists to provide:
+
+- **JavaScript-only runtime** for lightweight, portable deployments
+- **Plugin program architecture** with capability-based execution (`plan`/`do` syntax)
+- **Strategy-1 planner** for advanced runtime control
+- **Faster releases** with simplified build pipeline
+
+## Why Elo?
 
 No-Code tools like Klaro Cards generally require an expression language for user
 to manipulate data easily. This language must be :
@@ -19,42 +29,31 @@ to manipulate data easily. This language must be :
 
 See also the Related work section below.
 
-## Current Features
+## Fork Features (JavaScript-Only)
 
-- **Arithmetic expressions** with scalars and variables
-- **Boolean expressions** with comparison and logical operators
-- **Temporal types** with dates, datetimes, and ISO8601 durations
-- **Infix notation** (standard mathematical notation)
-- **Arithmetic operators**: `+`, `-`, `*`, `/`, `%`, `^` (power, plus string repeat and array concat)
-- **Comparison operators**: `<`, `>`, `<=`, `>=`, `==`, `!=`
-- **Logical operators**: `&&`, `||`, `!`
-- **Unary operators**: `-`, `+`, `!`
-- **Pipe operator**: `|>` for function chaining (Elixir-style), parentheses optional
-- **Alternative operator**: `|` for fallback chains (returns first defined value)
-- **Type selectors**: `Int()`, `Float()`, `Bool()`, `String()`, `Null()`, `Date()`, `Datetime()`, `Duration()`, `Data()` for parsing and converting values
-- **Type definitions**: Finitio-like schema validation with `let Person = { name: String, age: Int } in data |> Person`
-- **Lambdas**: `fn(x ~> x * 2)` or `x ~> x * 2` (sugar) for anonymous functions
-- **Guards**: `guard condition in body` for runtime validation with `check` for postconditions
-- **Input variable**: `_` for accessing external data passed to expressions
-- **Array iteration**: `map`, `filter`, `reduce`, `any`, `all` (JS/Ruby only)
-- **List functions**: `reverse`, `join(list, separator)`, `split(string, separator)`
-- **Literals**:
-  - Numbers: `42`, `3.14`
-  - Booleans: `true`, `false`
-  - Strings: `'hello'`
-  - Null: `null`
-  - Dates: `D2024-01-15`
-  - DateTimes: `D2024-01-15T10:30:00Z`
-  - Durations: `P1D`, `PT1H30M`, `P1Y2M3D` (ISO8601)
-  - Objects: `{name: 'Alice', age: 30}`
-  - Arrays: `[1, 2, 3]`, `['a', 'b']`, `[1, 'mixed', true, null]`
-  - DataPaths: `.x.y.z`, `.items.0.name` (for navigating data structures)
-- **Data functions**: `fetch(data, .path)` for safe access, `fetch(data, {x: .a, y: .b})` and `fetch(data, [.a, .b])` for multi-path extraction, `patch(data, .path, value)` for immutable updates, `merge(a, b)` and `deepMerge(a, b)` for merging objects
-- **Parentheses** for grouping
-- **Multi-target compilation**:
-  - Ruby (using `**` for power, `&&`/`||`/`!` for boolean logic, `Date.parse()`, `DateTime.parse()`, `ActiveSupport::Duration.parse()`)
-  - JavaScript (using `Math.pow()` for power, `&&`/`||`/`!` for boolean logic, `new Date()`, `Duration.parse()`)
-  - PostgreSQL (using `POWER()` for power, `AND`/`OR`/`NOT` for boolean logic, `DATE`, `TIMESTAMP`, `INTERVAL` for temporals)
+This fork introduces the following new features:
+
+### Plugin Program Architecture
+
+- **`plan`/`then` rounds**: Multi-stage computation model for plugin programs
+
+  ```elo
+  plan a = 1, b = _.x in then c = 2 in a + b + c
+  ```
+
+- **`do` capability calls**: Call external capabilities from within plugin programs
+
+  ```elo
+  plan result = do 'nostr.query' {kinds: [0]} in result | null
+  ```
+
+- **Strategy-1 planner/runtime driver**: Advanced execution planning for complex workflows
+
+- **JSON boundary helpers**: Utilities for working with JSON data at system boundaries
+
+### Upstream Features (Preserved)
+
+All original Elo features are preserved.
 
 ## Installation
 
@@ -69,7 +68,7 @@ Elo uses a comprehensive test suite that verifies:
 
 - **Unit tests**: Parser, AST, and compiler components
 - **Integration tests**: End-to-end compilation output
-- **Acceptance tests**: Compiled code execution in real runtimes (Ruby, Node.js, PostgreSQL)
+- **Acceptance tests**: Compiled code execution in JavaScript runtime (Node.js)
 
 ```bash
 npm run test:unit
@@ -86,39 +85,33 @@ Elo provides two CLI tools:
 
 ### Compiler (eloc)
 
-The compiler translates Elo expressions to Ruby, JavaScript, or SQL:
+The compiler translates Elo expressions to JavaScript:
 
 ```bash
 # Compile expression to JavaScript (default)
 ./bin/eloc -e "2 + 3 * 4"
 
-# Compile expression to Ruby
-./bin/eloc -e "2 + 3 * 4" -t ruby
-
-# Compile expression to SQL
-./bin/eloc -e "2 + 3 * 4" -t sql
-
 # Compile with prelude (includes required runtime libraries)
-./bin/eloc -e "NOW + PT2H" -t ruby -p
+./bin/eloc -e "NOW + PT2H" -p
 
 # Output only the prelude (useful for bundling)
-./bin/eloc --prelude-only -t js
+./bin/eloc --prelude-only
 
 # Compile from file (each line is compiled separately)
-./bin/eloc input.elo -t ruby
+./bin/eloc input.elo
 
 # Compile to file
-./bin/eloc -e "2 + 3" -t ruby -f output.rb
+./bin/eloc -e "2 + 3" -f output.js
 
 # Compile from stdin
 echo "2 + 3 * 4" | ./bin/eloc -
-cat input.elo | ./bin/eloc - -t ruby
+cat input.elo | ./bin/eloc -
 ```
 
 Options:
 
 - `-e, --expression <expr>` - Expression to compile
-- `-t, --target <lang>` - Target language: `ruby`, `js` (default), `sql`
+- `-t, --target <lang>` - Target language: `js` (default and only option in this fork)
 - `-p, --prelude` - Include necessary library imports/requires
 - `--prelude-only` - Output only the prelude (no expression needed)
 - `-f, --file <path>` - Output to file instead of stdout
@@ -200,12 +193,13 @@ For more control, you can use the lower-level parsing and compilation functions:
 ```typescript
 import {
   parse,
-  compileToRuby,
+  compile,
   compileToJavaScript,
-  compileToSQL,
+  parsePluginProgram,
+  compilePlugin,
 } from "@contextvm/elo";
 
-// Parse an expression
+// Parse a simple expression
 const ast = parse(`
   let
     x = TODAY,
@@ -214,127 +208,22 @@ const ast = parse(`
     assert(x + y * P1D == TODAY + P3D)
 `);
 
-// Compile to different targets
-console.log(compileToRuby(ast));
+// Compile to JavaScript
 console.log(compileToJavaScript(ast));
-console.log(compileToSQL(ast));
+
+// Parse and compile a plugin program with plan/then/do syntax
+const pluginSrc = "plan result = do 'cap.query' {limit: 10} in result | null";
+const plugin = parsePluginProgram(pluginSrc);
+const jsCode = compilePlugin(pluginSrc);
 ```
 
-## Programmatic AST Construction
+### Plugin Program API
 
-```typescript
-import { binary, variable, literal } from "./src";
+This fork introduces plugin program support for capability-based execution:
 
-// Build: (price * quantity) - discount
-const ast = binary(
-  "-",
-  binary("*", variable("price"), variable("quantity")),
-  variable("discount"),
-);
-```
-
-## Examples
-
-Run the examples:
-
-```bash
-npm run build
-node dist/examples/basic.js     # Arithmetic expressions
-node dist/examples/boolean.js   # Boolean expressions
-node dist/examples/temporal.js  # Temporal expressions (dates, durations)
-node dist/examples/demo.js      # Quick demo
-```
-
-## Project Structure
-
-```
-elo/
-├── src/              # Compiler source code
-│   ├── parser.ts     # Lexer and parser
-│   ├── ast.ts        # AST definitions
-│   ├── types.ts      # Type system
-│   ├── ir.ts         # Intermediate representation
-│   ├── transform.ts  # AST → IR transformation with type inference
-│   ├── stdlib.ts     # Standard library abstraction
-│   ├── compilers/    # Code generators (Ruby, JavaScript, SQL)
-│   └── preludes/     # Runtime support libraries
-├── test/             # Test suite
-│   ├── fixtures/     # Test cases
-│   ├── unit/         # Component tests
-│   ├── integration/  # Compilation tests
-│   └── acceptance/   # Runtime execution tests
-├── examples/         # Usage examples
-├── bin/eloc          # Compiler CLI
-├── bin/elo           # Evaluator CLI
-└── CLAUDE.md         # Developer guide
-```
-
-For detailed architecture documentation, see [CLAUDE.md](CLAUDE.md).
-
-## Related work
-
-Enspirit's previous research work includes a lot of places where such expressions
-are used, calling for a shared solution for the future.
-
-In many cases, observe that we require compiling expressions that amount to a
-single function evaluating on a context object, sometimes a scalar (Finitio),
-sometimes a current Tuple (Bmg), sometimes json data received from an API
-(Webspicy), or a current Card (Klaro Cards, similar to Bmg's Tuple).
-
-See https://elo-lang.org for more documentation.
-
-### Finitio
-
-The Finitio data validation language supports subtypes by constraints such as:
-
-```finitio
-PositiveInt = Int( i | i > 0 )
-```
-
-Currently, the constraint expression is written in the host language (js or ruby)
-and would require a portable expression language to go further.
-
-See https://finitio.io, https://github.com/enspirit/finitio-rb, https://github.com/enspirit/finitio.js
-
-### Bmg
-
-The Bmg relational algebra requires expressions for the `restrict` and `extend`
-operators inspired by **Tutorial D**. We currently rely on ruby code in some cases,
-but that prevents compiling relational expressions to SQL :
-
-```ruby
-r.restrict(->(t){ t[:budget] >= 120 })
-r.extend(:upcased => ->(t) { t[:name].upcase })
-```
-
-See https://www.relational-algebra.dev/, https://github.com/enspirit/bmg
-
-### Webspicy
-
-The Webspicy test framework requires a better expression language for data assertions.
-We currently rely on an hardcoded expression language that is very limited:
-
-```
-assert:
-- isEmpty
-- size(10)
-```
-
-See https://github.com/enspirit/webspicy
-
-### Klaro Cards
-
-The Klaro Cards No-Code tool uses various data expressions here and there :
-
-- Date ranges for Date/time dimensions : `SOW ... SOW+P1W`
-- Computed dimensions : `_.budget * 1.21`
-- Summary functions : `min(_.budget)`
-
-See https://klaro.cards
-
-## Contributing
-
-Elo follows a strict test-driven development methodology to ensure semantic equivalence across all three target languages (Ruby, JavaScript, SQL).
+- `parsePluginProgram(src: string)` - Parse a plugin program with `plan`/`then` rounds
+- `compilePlugin(src: string)` - Compile a plugin program to JavaScript
+- `parseWithMeta(src: string)` - Parse with diagnostics (errors, warnings)
 
 **Getting started**: See [HACKING.md](HACKING.md) for:
 

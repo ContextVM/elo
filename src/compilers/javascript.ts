@@ -223,13 +223,17 @@ function emitJS(
       return JSON.stringify(ir.value);
 
     case "date_literal":
-      return `DateTime.fromISO('${ir.value}')`;
+      // SECURITY: must not interpolate raw strings into JS code
+      // (prevents breaking out of quotes and injecting arbitrary code)
+      return `DateTime.fromISO(${JSON.stringify(ir.value)})`;
 
     case "datetime_literal":
-      return `DateTime.fromISO('${ir.value}')`;
+      // SECURITY: must not interpolate raw strings into JS code
+      return `DateTime.fromISO(${JSON.stringify(ir.value)})`;
 
     case "duration_literal":
-      return `Duration.fromISO('${ir.value}')`;
+      // SECURITY: must not interpolate raw strings into JS code
+      return `Duration.fromISO(${JSON.stringify(ir.value)})`;
 
     case "object_literal": {
       const props = ir.properties

@@ -15,6 +15,7 @@ import {
 } from "../../src/stdlib";
 import { Types } from "../../src/types";
 import { IRExpr, irInt, irFloat, irVariable, irDuration } from "../../src/ir";
+import { createJavaScriptBinding } from "../../src/bindings/javascript";
 
 describe("signatureKey", () => {
   it("should create key for nullary function", () => {
@@ -362,6 +363,70 @@ describe("StdLib", () => {
       assert.strictEqual(capturedName, "test");
       assert.deepStrictEqual(capturedArgTypes, [Types.int, Types.float]);
     });
+  });
+});
+
+describe("JavaScript binding - Interval", () => {
+  it("should register Interval operations and accessors", () => {
+    const lib = createJavaScriptBinding();
+
+    const dummyCtx: EmitContext<string> = {
+      emit: (_ir: any) => "X",
+      emitWithParens: (_ir: any) => "X",
+      requireHelper: (_name: string) => {},
+    };
+
+    // accessors
+    assert.doesNotThrow(() =>
+      lib.emit(
+        "start",
+        [{ type: "variable", name: "i", inferredType: Types.interval } as any],
+        [Types.interval],
+        dummyCtx,
+      ),
+    );
+    assert.doesNotThrow(() =>
+      lib.emit(
+        "end",
+        [{ type: "variable", name: "i", inferredType: Types.interval } as any],
+        [Types.interval],
+        dummyCtx,
+      ),
+    );
+
+    // operations
+    assert.doesNotThrow(() =>
+      lib.emit(
+        "union",
+        [
+          { type: "variable", name: "a", inferredType: Types.interval } as any,
+          { type: "variable", name: "b", inferredType: Types.interval } as any,
+        ],
+        [Types.interval, Types.interval],
+        dummyCtx,
+      ),
+    );
+    assert.doesNotThrow(() =>
+      lib.emit(
+        "intersection",
+        [
+          { type: "variable", name: "a", inferredType: Types.interval } as any,
+          { type: "variable", name: "b", inferredType: Types.interval } as any,
+        ],
+        [Types.interval, Types.interval],
+        dummyCtx,
+      ),
+    );
+
+    // conversion
+    assert.doesNotThrow(() =>
+      lib.emit(
+        "Duration",
+        [{ type: "variable", name: "i", inferredType: Types.interval } as any],
+        [Types.interval],
+        dummyCtx,
+      ),
+    );
   });
 });
 

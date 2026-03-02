@@ -67,7 +67,12 @@ export function isNumeric(t: EloType): boolean {
  * Check if a type is temporal (date, datetime, or duration)
  */
 export function isTemporal(t: EloType): boolean {
-  return t.kind === "date" || t.kind === "datetime" || t.kind === "duration" || t.kind === "interval";
+  return (
+    t.kind === "date" ||
+    t.kind === "datetime" ||
+    t.kind === "duration" ||
+    t.kind === "interval"
+  );
 }
 
 /**

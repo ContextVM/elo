@@ -15,6 +15,7 @@ import {
   memberAccess,
   letExpr,
   lambda,
+  objectLiteral,
   typeDef,
   typeRef,
   unionType,
@@ -108,6 +109,33 @@ describe("transform - variables", () => {
     assert.throws(
       () => transform(variable("foo")),
       /Undefined variable: 'foo'/,
+    );
+  });
+});
+
+describe("transform - member access restrictions", () => {
+  it("allows member access on data types (any/object/array)", () => {
+    // any
+    assert.doesNotThrow(() => transform(memberAccess(variable("_"), "price")));
+
+    // object
+    assert.doesNotThrow(() =>
+      transform(
+        memberAccess(objectLiteral([{ key: "x", value: literal(1) }]), "x"),
+      ),
+    );
+  });
+
+  it("rejects member access on typed temporal values", () => {
+    assert.throws(
+      () =>
+        transform(memberAccess(dateTimeLiteral("2024-01-15T10:30:00"), "year")),
+      /Member access '\.year' is not allowed on datetime type\. Use stdlib functions instead\./,
+    );
+
+    assert.throws(
+      () => transform(memberAccess(durationLiteral("P1D"), "seconds")),
+      /Member access '\.seconds' is not allowed on duration type\. Use stdlib functions instead\./,
     );
   });
 });

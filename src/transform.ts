@@ -42,7 +42,7 @@ import {
   inferType,
 } from "./ir";
 import { TypeExpr } from "./ast";
-import { EloType, Types } from "./types";
+import { EloType, Types, type TypeKind } from "./types";
 import { eloTypeDefs } from "./typedefs";
 
 /**
@@ -187,8 +187,20 @@ function transformWithDepth(
         allowUndefinedVariables,
       );
 
-    case "member_access":
-      return irMemberAccess(recurse(expr.object), expr.property);
+    case "member_access": // This prevents leaking runtime internals on typed values (e.g. Luxon DateTime/Duration methods). // SECURITY: Only allow member access on data types.
+    // If you need accessors on typed values, expose them through stdlib functions.
+    {
+      const objectIR = recurse(expr.object);
+      const objectType = inferType(objectIR);
+      const allowedTypes: TypeKind[] = ["any", "object", "array"];
+      if (!allowedTypes.includes(objectType.kind)) {
+        throw new Error(
+          `Member access '.${expr.property}' is not allowed on ${objectType.kind} type. ` +
+            `Use stdlib functions instead.`,
+        );
+      }
+      return irMemberAccess(objectIR, expr.property);
+    }
 
     case "let":
       return transformLet(

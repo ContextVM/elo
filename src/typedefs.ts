@@ -384,6 +384,16 @@ export function createTypeDefs(): TypeDefs {
   defs.register("start", [Types.interval], Types.datetime);
   defs.register("end", [Types.interval], Types.datetime);
 
+  // Interval operations
+  defs.register("union", [Types.interval, Types.interval], Types.interval);
+  defs.register(
+    "intersection",
+    [Types.interval, Types.interval],
+    Types.interval,
+  );
+  // Duration(Interval) - interval length
+  defs.register("Duration", [Types.interval], Types.duration);
+
   // Fallback: unknown functions return any
   defs.registerFallback(() => Types.any);
 

@@ -4,6 +4,9 @@ import { compileToJavaScript } from "../../../src/compilers/javascript";
 import {
   literal,
   stringLiteral,
+  dateLiteral,
+  dateTimeLiteral,
+  durationLiteral,
   variable,
   binary,
   unary,
@@ -78,6 +81,22 @@ describe("JavaScript Compiler - String Literals", () => {
   });
 });
 
+describe("JavaScript Compiler - Temporal literal injection safety", () => {
+  it("should safely escape date/datetime/duration literals in emitted JS", () => {
+    // If we ever interpolate raw strings into single quotes, this would break out.
+    const payload = "2024-01-15'); throw new Error('pwned'); ('";
+
+    assert.doesNotThrow(() => compileToJavaScript(dateLiteral(payload)));
+    assert.doesNotThrow(() => compileToJavaScript(dateTimeLiteral(payload)));
+    assert.doesNotThrow(() => compileToJavaScript(durationLiteral(payload)));
+
+    const dateJS = compileToJavaScript(dateLiteral(payload));
+    assert.match(dateJS, /DateTime\.fromISO\(/);
+    // Should contain a JSON string (double-quoted + escaped), not single-quoted interpolation.
+    assert.match(dateJS, /DateTime\.fromISO\("/);
+  });
+});
+
 describe("JavaScript Compiler - Variables", () => {
   it("should compile input variable _", () => {
     assert.strictEqual(compileToJavaScript(variable("_")), wrapJS("_"));
@@ -91,6 +110,16 @@ describe("JavaScript Compiler - Variables", () => {
     assert.strictEqual(
       compileToJavaScript(memberAccess(variable("_"), "userName")),
       wrapJS("_.userName"),
+    );
+  });
+
+  it("should reject member access on typed temporal values (security)", () => {
+    assert.throws(
+      () =>
+        compileToJavaScript(
+          memberAccess(dateTimeLiteral("2024-01-15T10:30:00"), "year"),
+        ),
+      /Member access '\.year' is not allowed on datetime type\. Use stdlib functions instead\./,
     );
   });
 });
@@ -388,7 +417,7 @@ describe("JavaScript Compiler - Date Arithmetic", () => {
     );
     assert.strictEqual(
       compileToJavaScript(ast),
-      wrapJS("DateTime.fromISO('2024-01-15').plus(Duration.fromISO('P1D'))"),
+      wrapJS('DateTime.fromISO("2024-01-15").plus(Duration.fromISO("P1D"))'),
     );
   });
 
@@ -400,7 +429,7 @@ describe("JavaScript Compiler - Date Arithmetic", () => {
     );
     assert.strictEqual(
       compileToJavaScript(ast),
-      wrapJS("DateTime.fromISO('2024-01-15').minus(Duration.fromISO('P1D'))"),
+      wrapJS('DateTime.fromISO("2024-01-15").minus(Duration.fromISO("P1D"))'),
     );
   });
 
@@ -413,7 +442,7 @@ describe("JavaScript Compiler - Date Arithmetic", () => {
     assert.strictEqual(
       compileToJavaScript(ast),
       wrapJS(
-        "DateTime.fromISO('2024-01-15T10:00:00Z').plus(Duration.fromISO('PT2H'))",
+        'DateTime.fromISO("2024-01-15T10:00:00Z").plus(Duration.fromISO("PT2H"))',
       ),
     );
   });
@@ -427,7 +456,7 @@ describe("JavaScript Compiler - Date Arithmetic", () => {
     assert.strictEqual(
       compileToJavaScript(ast),
       wrapJS(
-        "DateTime.fromISO('2024-01-15T10:00:00Z').plus(Duration.fromISO('PT1H30M'))",
+        'DateTime.fromISO("2024-01-15T10:00:00Z").plus(Duration.fromISO("PT1H30M"))',
       ),
     );
   });
