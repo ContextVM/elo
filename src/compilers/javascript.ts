@@ -237,7 +237,7 @@ function emitJS(
 
     case "object_literal": {
       const props = ir.properties
-        .map((p) => `${p.key}: ${ctx.emit(p.value)}`)
+        .map((p) => `${JSON.stringify(p.key)}: ${ctx.emit(p.value)}`)
         .join(", ");
       // Wrap in parens to avoid parsing ambiguity with blocks
       return `({${props}})`;

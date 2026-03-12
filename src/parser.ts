@@ -1833,6 +1833,19 @@ export class Parser {
 
     const properties: ObjectProperty[] = [];
 
+    const parseObjectKey = (): string => {
+      const token = this.currentToken;
+
+      if (token.type === "IDENTIFIER" || token.type === "STRING") {
+        this.eat(token.type);
+        return token.value;
+      }
+
+      throw new Error(
+        `Expected IDENTIFIER or STRING but got ${token.type} at ${this.formatLocation(token)}`,
+      );
+    };
+
     // Handle empty object
     if (this.currentToken.type === "RBRACE") {
       this.eat("RBRACE");
@@ -1840,8 +1853,7 @@ export class Parser {
     }
 
     // Parse first property
-    const firstName = this.currentToken.value;
-    this.eat("IDENTIFIER");
+    const firstName = parseObjectKey();
     this.eat("COLON");
     const firstValue = this.expr();
     properties.push({ key: firstName, value: firstValue });
@@ -1851,8 +1863,7 @@ export class Parser {
       this.eat("COMMA");
       // Allow trailing comma: check if next token closes the object
       if ((this.currentToken as Token).type === "RBRACE") break;
-      const name = this.currentToken.value;
-      this.eat("IDENTIFIER");
+      const name = parseObjectKey();
       this.eat("COLON");
       const value = this.expr();
       properties.push({ key: name, value });

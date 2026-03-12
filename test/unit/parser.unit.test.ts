@@ -1753,6 +1753,30 @@ describe("Parser - Trailing Commas", () => {
     }
   });
 
+  it("should parse object with quoted keys", () => {
+    const ast = parse("{'#e': 1, 'my-key': 2}");
+    assert.strictEqual(ast.type, "object");
+    if (ast.type === "object") {
+      assert.strictEqual(ast.properties.length, 2);
+      assert.strictEqual(ast.properties[0].key, "#e");
+      assert.strictEqual(ast.properties[1].key, "my-key");
+    }
+  });
+
+  it("should parse object with mixed identifier and quoted keys", () => {
+    const ast = parse("{authors: ['alice'], '#p': ['pubkey']}");
+    assert.strictEqual(ast.type, "object");
+    if (ast.type === "object") {
+      assert.strictEqual(ast.properties.length, 2);
+      assert.strictEqual(ast.properties[0].key, "authors");
+      assert.strictEqual(ast.properties[1].key, "#p");
+      assert.deepStrictEqual(ast.properties[1].value, {
+        type: "array",
+        elements: [{ type: "string", value: "pubkey" }],
+      });
+    }
+  });
+
   it("should parse type schema with trailing comma", () => {
     const ast = parse("let T = { name: String, age: Int, } in x |> T");
     assert.strictEqual(ast.type, "typedef");

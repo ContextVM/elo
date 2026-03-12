@@ -12,6 +12,8 @@ import {
   unary,
   letExpr,
   memberAccess,
+  objectLiteral,
+  arrayLiteral,
 } from "../../../src/ast";
 import { JS_HELPERS } from "../../../src/runtime";
 
@@ -94,6 +96,48 @@ describe("JavaScript Compiler - Temporal literal injection safety", () => {
     assert.match(dateJS, /DateTime\.fromISO\(/);
     // Should contain a JSON string (double-quoted + escaped), not single-quoted interpolation.
     assert.match(dateJS, /DateTime\.fromISO\("/);
+  });
+});
+
+describe("JavaScript Compiler - Object Literals", () => {
+  it("should compile identifier-like object keys as quoted properties", () => {
+    assert.strictEqual(
+      compileToJavaScript(
+        objectLiteral([
+          { key: "authors", value: arrayLiteral([stringLiteral("alice")]) },
+        ]),
+      ),
+      wrapJS('({"authors": ["alice"]})'),
+    );
+  });
+
+  it("should compile quoted object keys safely", () => {
+    assert.strictEqual(
+      compileToJavaScript(
+        objectLiteral([
+          { key: "#e", value: arrayLiteral([stringLiteral("event-id")]) },
+          { key: "#K", value: arrayLiteral([stringLiteral("kind")]) },
+        ]),
+      ),
+      wrapJS('({"#e": ["event-id"], "#K": ["kind"]})'),
+    );
+  });
+
+  it("should escape dangerous-looking object keys safely", () => {
+    const compiled = compileToJavaScript(
+      objectLiteral([
+        {
+          key: '__proto__\"; throw new Error("pwned"); //',
+          value: literal(1),
+        },
+      ]),
+    );
+
+    assert.match(
+      compiled,
+      /\{\"__proto__\\\"; throw new Error\(\\\"pwned\\\"\); \/\/\": 1\}/,
+    );
+    assert.doesNotThrow(() => new Function(`return ${compiled}`));
   });
 });
 

@@ -225,6 +225,8 @@ This fork introduces plugin program support for capability-based execution:
 - `compilePlugin(src: string)` - Compile a plugin program to JavaScript
 - `parseWithMeta(src: string)` - Parse with diagnostics (errors, warnings)
 
+Object literals accept both bare identifier keys and quoted string keys, so protocol-shaped data such as `{kinds: [1], '#e': ['event-id'], '#K': ['kind']}` can be written directly in Elo.
+
 **Getting started**: See [HACKING.md](HACKING.md) for:
 
 - Development environment setup (local or Docker)

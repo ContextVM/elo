@@ -182,6 +182,13 @@ describe("toEloCode - objects", () => {
     assert.strictEqual(toEloCode({ "with space": 1 }), "{'with space': 1}");
   });
 
+  it("serializes Nostr-style tag keys as quoted keys", () => {
+    assert.strictEqual(
+      toEloCode({ "#e": ["event-id"], "#K": ["kind"] }),
+      "{'#e': ['event-id'], '#K': ['kind']}",
+    );
+  });
+
   it("escapes quotes in quoted keys", () => {
     assert.strictEqual(toEloCode({ "it's": 1 }), "{'it\\'s': 1}");
   });
