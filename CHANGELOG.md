@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.2
+
+### Patch Changes
+
+- feat: support quoted string keys in object literals
+
 ## 0.10.1
 
 ### Synced from upstream (enspirit/elo)
