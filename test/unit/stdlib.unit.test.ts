@@ -417,6 +417,18 @@ describe("JavaScript binding - Interval", () => {
         dummyCtx,
       ),
     );
+    assert.match(
+      lib.emit(
+        "intersection",
+        [
+          { type: "variable", name: "a", inferredType: Types.interval } as any,
+          { type: "variable", name: "b", inferredType: Types.interval } as any,
+        ],
+        [Types.interval, Types.interval],
+        dummyCtx,
+      ),
+      /kIntersection\(/,
+    );
 
     // conversion
     assert.doesNotThrow(() =>

@@ -187,9 +187,8 @@ function transformWithDepth(
         allowUndefinedVariables,
       );
 
-    case "member_access": // This prevents leaking runtime internals on typed values (e.g. Luxon DateTime/Duration methods). // SECURITY: Only allow member access on data types.
-    // If you need accessors on typed values, expose them through stdlib functions.
-    {
+    case "member_access": {
+      // If you need accessors on typed values, expose them through stdlib functions. // This prevents leaking runtime internals on typed values (e.g. Luxon DateTime/Duration methods). // SECURITY: Only allow member access on data types.
       const objectIR = recurse(expr.object);
       const objectType = inferType(objectIR);
       const allowedTypes: TypeKind[] = ["any", "object", "array"];

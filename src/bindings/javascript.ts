@@ -376,13 +376,13 @@ export function createJavaScriptBinding(): StdLib<string> {
     "min",
     [Types.array],
     (args, ctx) =>
-      `(a => a.length === 0 ? null : Math.min(...a))(${ctx.emit(args[0])})`,
+      `(a => a.length === 0 ? null : a.reduce((m, x) => x < m ? x : m))(${ctx.emit(args[0])})`,
   );
   jsLib.register(
     "max",
     [Types.array],
     (args, ctx) =>
-      `(a => a.length === 0 ? null : Math.max(...a))(${ctx.emit(args[0])})`,
+      `(a => a.length === 0 ? null : a.reduce((m, x) => x > m ? x : m))(${ctx.emit(args[0])})`,
   );
   jsLib.register(
     "sum",
@@ -684,12 +684,20 @@ export function createJavaScriptBinding(): StdLib<string> {
 
   // Data path navigation
   jsLib.register("fetch", [Types.any, Types.fn], helperCall("kFetch"));
+  jsLib.register("fetch", [Types.any, Types.string], (args, ctx) => {
+    ctx.requireHelper?.("kFetch");
+    return `kFetch(${ctx.emit(args[0])}, [${ctx.emit(args[1])}])`;
+  });
   jsLib.register(
     "fetch",
     [Types.any, Types.object],
     helperCall("kFetchObject"),
   );
-  jsLib.register("fetch", [Types.any, Types.array], helperCall("kFetchArray"));
+  jsLib.register(
+    "fetch",
+    [Types.any, Types.array],
+    (args, ctx) => `kFetch(${ctx.emit(args[0])}, ${ctx.emit(args[1])})`,
+  );
   jsLib.register(
     "patch",
     [Types.any, Types.fn, Types.any],
@@ -789,7 +797,10 @@ export function createJavaScriptBinding(): StdLib<string> {
   jsLib.register(
     "intersection",
     [Types.interval, Types.interval],
-    (args, ctx) => `${ctx.emit(args[0])}.intersection(${ctx.emit(args[1])})`,
+    (args, ctx) => {
+      ctx.requireHelper?.("kIntersection");
+      return `kIntersection(${ctx.emit(args[0])}, ${ctx.emit(args[1])})`;
+    },
   );
 
   // Duration from Interval (length)

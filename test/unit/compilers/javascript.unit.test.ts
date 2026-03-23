@@ -166,6 +166,19 @@ describe("JavaScript Compiler - Variables", () => {
       /Member access '\.year' is not allowed on datetime type\. Use stdlib functions instead\./,
     );
   });
+
+  it("should compile fetch with string key via kFetch single-segment path", () => {
+    const ast = {
+      type: "function_call",
+      name: "fetch",
+      args: [variable("_"), stringLiteral("name")],
+    } as any;
+
+    assert.strictEqual(
+      compileToJavaScript(ast),
+      withHelpers('kFetch(_, ["name"])', "kFetch"),
+    );
+  });
 });
 
 describe("JavaScript Compiler - Arithmetic Operators (typed literals)", () => {
@@ -501,6 +514,63 @@ describe("JavaScript Compiler - Date Arithmetic", () => {
       compileToJavaScript(ast),
       wrapJS(
         'DateTime.fromISO("2024-01-15T10:00:00Z").plus(Duration.fromISO("PT1H30M"))',
+      ),
+    );
+  });
+
+  it("should compile min on DateTime arrays without Math.min", () => {
+    const ast = {
+      type: "function_call",
+      name: "min",
+      args: [
+        arrayLiteral([
+          dateTimeLiteral("2024-01-15T10:30:00"),
+          dateTimeLiteral("2024-01-16T10:30:00"),
+        ]),
+      ],
+    } as any;
+
+    assert.strictEqual(
+      compileToJavaScript(ast),
+      wrapJS(
+        '(a => a.length === 0 ? null : a.reduce((m, x) => x < m ? x : m))([DateTime.fromISO("2024-01-15T10:30:00"), DateTime.fromISO("2024-01-16T10:30:00")])',
+      ),
+    );
+  });
+
+  it("should compile intersection using kIntersection helper", () => {
+    const ast = {
+      type: "function_call",
+      name: "intersection",
+      args: [
+        {
+          type: "function_call",
+          name: "Interval",
+          args: [
+            objectLiteral([
+              { key: "start", value: dateTimeLiteral("2024-01-15T00:00:00") },
+              { key: "end", value: dateTimeLiteral("2024-01-20T00:00:00") },
+            ]),
+          ],
+        },
+        {
+          type: "function_call",
+          name: "Interval",
+          args: [
+            objectLiteral([
+              { key: "start", value: dateTimeLiteral("2024-01-18T00:00:00") },
+              { key: "end", value: dateTimeLiteral("2024-01-25T00:00:00") },
+            ]),
+          ],
+        },
+      ],
+    } as any;
+
+    assert.strictEqual(
+      compileToJavaScript(ast),
+      withHelpers(
+        'kIntersection(Interval.fromDateTimes(DateTime.fromISO("2024-01-15T00:00:00"), DateTime.fromISO("2024-01-20T00:00:00")), Interval.fromDateTimes(DateTime.fromISO("2024-01-18T00:00:00"), DateTime.fromISO("2024-01-25T00:00:00")))',
+        "kIntersection",
       ),
     );
   });

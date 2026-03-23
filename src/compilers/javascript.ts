@@ -1,5 +1,5 @@
 import { Expr } from "../ast";
-import { IRExpr, IRCall, usesInput } from "../ir";
+import { IRExpr, IRCall, usesInput, IRTypeExpr } from "../ir";
 import { transform } from "../transform";
 import { EmitContext } from "../stdlib";
 import {
@@ -374,7 +374,7 @@ function emitJS(
  * Emit a parser function for a type expression
  */
 function emitTypeExprParser(
-  typeExpr: import("../ir").IRTypeExpr,
+  typeExpr: IRTypeExpr,
   ctx: EmitContext<string>,
 ): string {
   switch (typeExpr.kind) {
