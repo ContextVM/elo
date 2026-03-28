@@ -224,8 +224,117 @@ This fork introduces plugin program support for capability-based execution:
 - `parsePluginProgram(src: string)` - Parse a plugin program with `plan`/`then` rounds
 - `compilePlugin(src: string)` - Compile a plugin program to JavaScript
 - `parseWithMeta(src: string)` - Parse with diagnostics (errors, warnings)
+- `validatePluginProgram(src: string, options)` - Validate plugin semantics, including `do` capability usage
+- `validateExpressionAst(expr, options)` - Validate an expression AST against a caller-provided scope
 
 Object literals accept both bare identifier keys and quoted string keys, so protocol-shaped data such as `{kinds: [1], '#e': ['event-id'], '#K': ['kind']}` can be written directly in Elo.
+
+### Validating plugin programs with host-provided capabilities
+
+Plugin validation is intentionally split between the Elo library and the host application:
+
+- Elo parses plugin syntax and validates generic expression semantics
+- the host provides the list of allowed `do` capabilities
+- the host may optionally attach argument validators for each capability
+
+This keeps capability policy out of the parser and compiler while still giving plugin authors useful diagnostics.
+
+#### Basic validation
+
+Use [`validatePluginProgram()`](src/plugin-validator.ts:271) to validate a plugin program and inject the capabilities your host supports:
+
+```ts
+import { validatePluginProgram } from "@contextvm/elo";
+
+const source = "plan events = do 'nostr.query' {kinds: [1]} in events | null";
+
+const result = validatePluginProgram(source, {
+  capabilities: {
+    "nostr.query": { name: "nostr.query" },
+  },
+});
+
+console.log(result.diagnostics);
+```
+
+If a program uses an unknown capability name, [`validatePluginProgram()`](src/plugin-validator.ts:271) returns a diagnostic instead of throwing.
+
+#### Why capabilities are injected by the host
+
+[`do`](src/ast.ts:36) is a host-level escape hatch, not a generic Elo runtime primitive.
+
+That means the library should validate the structure of `do`, but it should not hardcode a global catalog of supported capabilities. Different hosts can expose different operations, or none at all.
+
+The recommended pattern is:
+
+- keep the capability registry in your app or runtime layer
+- pass it into [`validatePluginProgram()`](src/plugin-validator.ts:271)
+- use tests to emulate host capabilities where needed
+
+#### Validating capability arguments
+
+Each capability can define a [`PluginCapabilitySpec`](src/plugin-validator.ts:14) with a [`validateArgs`](src/plugin-validator.ts:16) callback.
+
+That callback receives a [`PluginCapabilityValidationContext`](src/plugin-validator.ts:19), which includes:
+
+- [`argsExpr`](src/plugin-validator.ts:20): the raw AST passed to `do`
+- [`allowedVariables`](src/plugin-validator.ts:21): variables visible at that binding site
+- [`roundIndex`](src/plugin-validator.ts:22): the current round number
+- [`bindingName`](src/plugin-validator.ts:23): the binding receiving the `do` result
+- [`validateExpressionAst`](src/plugin-validator.ts:24): helper for reusing Elo's generic expression validation inside your capability validator
+
+Example:
+
+```ts
+import { validatePluginProgram } from "@contextvm/elo";
+
+const source = `
+  plan author = _.pubkey,
+       events = do 'nostr.query' {authors: [author], limit: 10}
+  in events | null
+`;
+
+const result = validatePluginProgram(source, {
+  capabilities: {
+    "nostr.query": {
+      name: "nostr.query",
+      validateArgs: ({ argsExpr, allowedVariables, validateExpressionAst }) => {
+        if (!allowedVariables.includes("author")) {
+          return [
+            {
+              message: "author is expected to be in scope",
+              severity: "error",
+            },
+          ];
+        }
+
+        return validateExpressionAst(argsExpr);
+      },
+    },
+  },
+});
+
+console.log(result.diagnostics);
+```
+
+This pattern keeps the API simple:
+
+- Elo remains the source of truth for parsing and generic semantic validation
+- the host remains the source of truth for which capabilities exist
+- consumers do not need a built-in capability catalog in the library
+
+#### What Elo validates today
+
+For plugin programs, [`validatePluginProgram()`](src/plugin-validator.ts:271) currently helps detect:
+
+- parse errors in plugin syntax
+- sequential binding-scope errors across `plan` and `then` rounds
+- unknown variables and unknown functions in normal expressions
+- unknown capability names in [`do`](src/ast.ts:36)
+- invalid capability argument expressions
+- illegal `do` usage in score expressions
+
+This makes it suitable as the main library-side validator, with host-specific capability policy layered on top.
 
 **Getting started**: See [HACKING.md](HACKING.md) for:
 

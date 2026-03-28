@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.10.4
+
+### Patch Changes
+
+- feat: add plugin validation API with host-injected capability validation
+
+  Add validatePluginProgram() and validateExpressionAst() functions to enable
+  host-injected capability validation for plugin programs. This separates
+  plugin semantic validation from the parser while keeping capability policy
+  in the host application.
+  - New src/plugin-validator.ts module with validation orchestration
+  - Exported validation types and functions from src/embed.ts
+  - Added unit tests for validation scenarios
+  - Updated README with validation API documentation
+
 ## 0.10.3
 
 ### Patch Changes

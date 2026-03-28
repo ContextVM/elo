@@ -11,6 +11,15 @@ import {
   type JavaScriptCompileResult,
 } from "./compilers/javascript";
 import type { Expr } from "./ast";
+export {
+  validateExpressionAst,
+  validatePluginProgram,
+  type PluginCapabilitySpec,
+  type PluginCapabilityValidationContext,
+  type PluginDiagnostic,
+  type PluginValidationOptions,
+  type ValidatedPluginProgram,
+} from "./plugin-validator";
 
 export type DiagnosticSeverity = "error" | "warning";
 
